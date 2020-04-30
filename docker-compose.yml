@@ -1,0 +1,71 @@
+version: '3'
+services:
+  mysql_db:
+    image: mysql:5.7
+    restart: always
+    volumes:
+      - mysql_db_data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wp-password
+      MYSQL_DATABASE: wordpress
+    networks:
+      - site
+      
+  phpmyadmin:
+    depends_on:
+      - mysql_db
+    image: phpmyadmin/phpmyadmin:latest
+    restart: always
+    ports:
+      - 8080:80
+    environment:
+      PMA_HOST: mysql_db
+      MYSQL_ROOT_PASSWORD: password
+    networks:
+      - site
+    
+  wordpress:
+    depends_on:
+      - mysql_db
+    image: wordpress:5.1.1-php7.3-apache
+    ports:
+      - 8000:80
+    restart: always
+    volumes: wordpress_data:/var/www/html
+    environment:
+      WORDPRESS_DB_HOST: mysql_db
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wp-password
+    networks:
+      - site
+      
+  docker_ui:
+    image: uifd/ui-for-docker:latest
+    restart: always
+    ports:
+      - 9000:9000
+    volumes: /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - site
+  
+  
+  portainer:
+    image: portainer/portainer:latest
+    command: -H unix:///var/run/docker.sock
+    ports:
+      - 9001:9000
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    restart: always
+    networks:
+      - site
+
+networks:
+  site:
+volumes:
+  mysql_db_data:
+  wordpress_data:
+  portainer_data:
